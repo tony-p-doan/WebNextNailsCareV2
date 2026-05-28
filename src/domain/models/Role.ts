@@ -1,1 +1,1 @@
-export type Role = "CUSTOMER" | "SHOP_OWNER" | "SHOP_MANAGER" | "PROVIDER";
+export type Role = "superadmin" | "storeadmin" | "customer" | "employee";

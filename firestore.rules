@@ -1,0 +1,105 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper: superadmin check ───────────────────────────────────────────────
+    function isSuperAdmin() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+    }
+
+    // ── User profile & appointments ────────────────────────────────────────────
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // Customer's own appointment mirror (written at booking time)
+      match /appointments/{aptId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Customer's points balance for a specific store.
+      match /storeRewards/{storeId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Cancellation notifications written by store admin; read/acknowledged by the customer.
+      match /notifications/{notifId} {
+        // Customer reads and acknowledges their own notifications.
+        allow read, update: if request.auth != null && request.auth.uid == userId;
+        // Store admin (or superadmin) can create notifications for any customer.
+        allow create: if request.auth != null &&
+                      (isSuperAdmin() ||
+                       exists(/databases/$(database)/documents/stores/$(request.auth.uid)));
+      }
+
+      match /adminAccessNotices/{noticeId} {
+        allow read, update: if request.auth != null && request.auth.uid == userId;
+        allow create, delete: if false;
+      }
+    }
+
+    // ── Stores ────────────────────────────────────────────────────────────────
+    match /stores/{storeId} {
+      // Public read — anyone can browse stores, services, and availability
+      // without signing in (login is enforced at save/booking time).
+      allow read: if true;
+      // Store admin (uid == storeId) or superadmin can write
+      allow write: if request.auth != null &&
+                   (request.auth.uid == storeId || isSuperAdmin());
+
+      match /employees/{employeeId} {
+        allow read: if true;
+        allow write: if request.auth != null && request.auth.uid == storeId;
+      }
+      match /services/{serviceId} {
+        allow read: if true;
+        allow write: if request.auth != null && request.auth.uid == storeId;
+      }
+      match /schedules/{scheduleId} {
+        allow read: if true;
+        allow write: if request.auth != null && request.auth.uid == storeId;
+      }
+      match /rewards/{rewardId} {
+        allow read: if true;
+        allow write: if request.auth != null && request.auth.uid == storeId;
+      }
+      match /appointments/{aptId} {
+        // Store admin has full access
+        allow read, write: if request.auth != null && request.auth.uid == storeId;
+        // Public read — needed for unauthenticated availability checks
+        allow read: if true;
+        // Only authenticated users can create (book) an appointment
+        allow create: if request.auth != null;
+        // Customer can update their own appointment (e.g. cancel)
+        allow update: if request.auth != null
+                      && resource.data.customerUserId == request.auth.uid;
+      }
+    }
+
+    // ── Store billing accounts (read by superadmin; written by Cloud Functions / backend)
+    match /storeAccounts/{storeId} {
+      allow read: if request.auth != null;
+      allow write: if false; // written only by Cloud Functions / backend
+    }
+
+    // ── Appointment reminders (written by client after booking; processed by Cloud Function)
+    match /appointmentReminders/{reminderId} {
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // ── Public before/after Share Experience pages
+    match /experienceShares/{shareId} {
+      allow read: if true;
+      allow create, update, delete: if false;
+    }
+
+    // ── Collection-group query: customer reads their own appointments
+    //    across all stores (needed for the Account screen)
+    match /{path=**}/appointments/{aptId} {
+      allow read: if request.auth != null
+                  && resource.data.customerUserId == request.auth.uid;
+    }
+  }
+}

@@ -1,0 +1,15 @@
+export const DEFAULT_SERVICES: [string, string, string][] = [
+  ["✋", "Manicure", "Classic nail shaping and polish"],
+  ["🦶", "Pedicure", "Foot soak, exfoliation, and polish"],
+  ["💅", "Gel Manicure", "Long-lasting gel polish application"],
+  ["🦶💅", "Gel Pedicure", "Gel polish for toes"],
+  ["✨", "Acrylic Full Set", "Full set of acrylic nail extensions"],
+  ["🔧", "Acrylic Fill", "Fill for acrylic nail growth"],
+  ["🎨", "Nail Art", "Custom nail art and design"],
+  ["🩹", "Nail Repair", "Repair and strengthen damaged nails"],
+  ["🕯️", "Paraffin Wax", "Hands or feet paraffin treatment"],
+  ["🇫🇷", "French Manicure", "Classic French tip style"],
+  ["💿", "Polish Change", "Remove and apply new polish"],
+  ["🧴", "Hand Treatment", "Moisturizing hand care"],
+  ["🦶✨", "Spa Pedicure", "Luxury foot spa and polish"],
+];

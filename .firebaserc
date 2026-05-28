@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "nextnailsv2-dev",
+    "prod": "nextnailsv2",
+    "dev": "nextnailsv2-dev"
+  }
+}
